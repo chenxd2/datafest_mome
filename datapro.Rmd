@@ -1,0 +1,156 @@
+---
+title: "datafest"
+author: "mome"
+date: "4/5/2019"
+output: html_document
+---
+```{r}
+library("tidyverse")
+library("dplyr")
+```
+
+data preview
+```{r}
+rpe <- read.csv("~/Desktop/data/DataFestFiles/data for datafest 2019/rpe.csv")
+head(rpe, 12) 
+game <- read.csv("~/Desktop/data/DataFestFiles/data for datafest 2019/games.csv")
+head(game)
+wellness <- read.csv("~/Desktop/data/DataFestFiles/data for datafest 2019/wellness.csv")
+head(wellness)
+gps <- read.csv("~/Desktop/data/DataFestFiles/data for datafest 2019/gps.csv")
+head(gps)
+```
+sessionload scale
+```{r}
+rpe_mean <- rpe %>%
+            select(PlayerID, RPE) %>%
+            group_by(PlayerID) %>%
+            na.omit() %>%
+            summarise(mean=mean(RPE))
+rpe_sd <- rpe %>%
+    select(Date, PlayerID, RPE, Duration) %>%
+    filter(!is.na(RPE)) %>%
+    full_join(rpe_mean) %>%
+    mutate(StandardizeRPE=RPE-mean, StandardizeSessionLoad=StandardizeRPE*Duration)
+```
+
+Desire sd
+```{r}
+desire_mean <- wellness %>%
+            select(PlayerID, Desire) %>%
+            group_by(PlayerID) %>%
+            na.omit() %>%
+            summarise(mean=mean(Desire))
+desire_sd <- wellness %>%
+    select(Date, PlayerID, Desire) %>%
+    filter(!is.na(Desire)) %>%
+    full_join(desire_mean) %>%
+    mutate(StandardizeDesire=Desire-mean)
+```
+
+Irritability
+```{r}
+irr_mean <- wellness %>%
+            select(PlayerID, Irritability) %>%
+            group_by(PlayerID) %>%
+            na.omit() %>%
+            summarise(mean=mean(Irritability))
+irr_sd <- wellness %>%
+    select(Date, PlayerID, Irritability) %>%
+    filter(!is.na(Irritability)) %>%
+    full_join(irr_mean) %>%
+    mutate(StandardizeIrritability=Irritability-mean)
+```
+
+Bestofmyself
+```{r}
+best_pro <- rpe %>% 
+      mutate(BestOutOfMyself = case_when(BestOutOfMyself=="Absolutely" ~ 3, BestOutOfMyself=="Somewhat" ~ 2, BestOutOfMyself=="Not at all" ~ 1))
+best_mean <- best_pro %>%
+            select(PlayerID, BestOutOfMyself) %>%
+            group_by(PlayerID) %>%
+            na.omit() %>%
+            summarise(mean=mean(BestOutOfMyself))
+best_sd <- best_pro %>%
+    select(Date, PlayerID, BestOutOfMyself) %>%
+    filter(!is.na(BestOutOfMyself)) %>%
+    full_join(best_mean) %>%
+    mutate(StandardizeBestOutOfMyself = BestOutOfMyself - mean)
+```
+
+1.fatigue 2.soreness 3.sleeping quality .. corelatted
+```{r}
+fatigue_mean <- wellness %>%
+            select(PlayerID, Fatigue) %>%
+            group_by(PlayerID) %>%
+            na.omit() %>%
+            summarise(mean=mean(Fatigue))
+fatigue_sd <- wellness %>%
+    select(Date, PlayerID, Fatigue) %>%
+    filter(!is.na(Fatigue)) %>%
+    full_join(fatigue_mean) %>%
+    mutate(StandardizeFatigue = Fatigue - mean)
+###
+soreness_mean <- wellness %>%
+            select(PlayerID, Soreness) %>%
+            group_by(PlayerID) %>%
+            na.omit() %>%
+            summarise(mean=mean(Soreness))
+soreness_sd <- wellness %>%
+    select(Date, PlayerID, Soreness) %>%
+    filter(!is.na(Soreness)) %>%
+    full_join(soreness_mean) %>%
+    mutate(StandardizeSoreness = Soreness - mean)
+###
+#sq_mean <- wellness %>%
+           # select(PlayerID, SleepQuality) %>%
+           # group_by(PlayerID) %>%
+           # na.omit() %>%
+           # summarise(mean=mean(SleepQuality))
+#sq_sd <- wellness %>%
+    #select(Date, PlayerID, SleepQuality) %>%
+    #filter(!is.na(SleepQuality)) %>%
+    #full_join(sq_mean) %>%
+    #mutate(StandardizeSQ = SleepQuality - mean)
+```
+
+monitoring parameter
+```{r}
+mp <- fatigue_sd %>%
+      select(Date, PlayerID, StandardizeFatigue) %>%
+      filter(!is.na(StandardizeFatigue)) %>%
+      full_join(soreness_sd) %>%
+      mutate(mratio = 0.534 * StandardizeFatigue + 0.466 * StandardizeSoreness)
+  
+```
+
+1.pain 2.illness
+```{r}
+## rebuild
+pain_pro <- wellness %>% 
+      mutate(Pain = case_when(Pain =="No" ~ 0, Pain =="Yes" ~ 1))
+pain_mean <- pain_pro %>%
+            select(PlayerID, Pain) %>%
+            group_by(PlayerID) %>%
+            na.omit() %>%
+            summarise(mean=mean(Pain))
+pain_sd <- pain_pro %>%
+    select(Date, PlayerID, Pain) %>%
+    filter(!is.na(Pain)) %>%
+    full_join(pain_mean) %>%
+    mutate(StandardizePain = Pain - mean)
+###
+ill_pro <- wellness %>% 
+      mutate(Illness = case_when(Illness =="No" ~ 0, Illness =="Slightly Off" ~ 1, Illness =="Yes" ~ 2))
+ill_mean <- ill_pro %>%
+            select(PlayerID, Illness) %>%
+            group_by(PlayerID) %>%
+            na.omit() %>%
+            summarise(mean=mean(Illness))
+ill_sd <- ill_pro %>%
+    select(Date, PlayerID, Illness) %>%
+    filter(!is.na(Illness)) %>%
+    full_join(ill_mean) %>%
+    mutate(StandardizeIll = Illness - mean)
+```
+
