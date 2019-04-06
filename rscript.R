@@ -14,7 +14,6 @@ games_data <- read.csv("DataFestFiles/data/games.csv", stringsAsFactors = FALSE)
 
 rpe_mean <- rpe_data %>%
             select(PlayerID, RPE) %>%
-            filter(!is.na(RPE)) %>%
             group_by(PlayerID) %>%
             summarise(mean=mean(RPE))
 
@@ -22,7 +21,7 @@ rpe_sd <- rpe_data %>%
     select(PlayerID, RPE, Duration) %>%
     filter(!is.na(RPE)) %>%
     full_join(rpe_mean) %>%
-    mutate(StandardizeRPE=RPE-mean, StandardizeSessionLoad=StandardizeRPE*Duration)
+    mutate(StandardizeRPE=RPE-mean, is.na(StandardizeSessionLoad=StandardizeRPE*Duration)
     
   
 
