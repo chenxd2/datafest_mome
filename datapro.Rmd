@@ -192,6 +192,15 @@ cor(new, use = "complete.obs")
 cor(new$acratio, new$fatigue, use = "complete.obs")
 ```
 ```{r}
-
+# manipulate scale
+s <- base3 %>%
+  mutate(scaled_fatigue = round(StandardizeFatigue + 4)) %>%
+  mutate(scaled_sq = round(StandardizeSQ + 5)) %>%
+  mutate(scaled_sore = round(StandardizeSoreness + 4)) %>%
+  mutate(scaled_desire = round(StandardizeDesire + 4)) %>%
+  mutate(scaled_irr = round(StandardizeIrritability + 4)) %>%
+  mutate(scaled_sl = round(sdsessionloadmean + 328)) %>%
+  select(scaled_fatigue, scaled_sq, scaled_sore, scaled_desire, scaled_irr, scaled_sl, AcuteChronicRatio)
+plot(s$scaled_fatigue, s$AcuteChronicRatio)
 ```
 
