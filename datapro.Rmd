@@ -17,8 +17,8 @@ game <- read.csv("~/Desktop/data/DataFestFiles/data for datafest 2019/games.csv"
 head(game)
 wellness <- read.csv("~/Desktop/data/DataFestFiles/data for datafest 2019/wellness.csv")
 head(wellness)
-gps <- read.csv("~/Desktop/data/DataFestFiles/data for datafest 2019/gps.csv")
-head(gps)
+#gps <- read.csv("~/Desktop/data/DataFestFiles/data for datafest 2019/gps.csv")
+#head(gps)
 ```
 sessionload scale
 ```{r}
@@ -210,6 +210,7 @@ plot(s2$scaled_fatigue, s$AcuteChronicRatio)
 
 
 ```{r}
+## multinomial test failed
 te <- lm(scaled_fatigue ~ scaled_sq + scaled_sl + scaled_desire + scaled_irr + scaled_sore + AcuteChronicRatio, data = s2)
   summary(te)
 set.seed(100)
