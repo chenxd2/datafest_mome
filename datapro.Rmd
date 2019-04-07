@@ -102,16 +102,16 @@ soreness_sd <- wellness %>%
     full_join(soreness_mean) %>%
     mutate(StandardizeSoreness = Soreness - mean)
 ###
-#sq_mean <- wellness %>%
-           # select(PlayerID, SleepQuality) %>%
-           # group_by(PlayerID) %>%
-           # na.omit() %>%
-           # summarise(mean=mean(SleepQuality))
-#sq_sd <- wellness %>%
-    #select(Date, PlayerID, SleepQuality) %>%
-    #filter(!is.na(SleepQuality)) %>%
-    #full_join(sq_mean) %>%
-    #mutate(StandardizeSQ = SleepQuality - mean)
+sq_mean <- wellness %>%
+           select(PlayerID, SleepQuality) %>%
+           group_by(PlayerID) %>%
+           na.omit() %>%
+           summarise(mean=mean(SleepQuality))
+sq_sd <- wellness %>%
+    select(Date, PlayerID, SleepQuality) %>%
+    filter(!is.na(SleepQuality)) %>%
+    full_join(sq_mean) %>%
+    mutate(StandardizeSQ = SleepQuality - mean)
 ```
 
 monitoring parameter
@@ -152,5 +152,46 @@ ill_sd <- ill_pro %>%
     filter(!is.na(Illness)) %>%
     full_join(ill_mean) %>%
     mutate(StandardizeIll = Illness - mean)
+```
+
+
+```{r}
+# join all variable for new fatigue: acutechronic ratio (rpe), sessionload(rpe.sd), soreness (soreness.sd),
+# sleepingquality(sq.sd), 
+rpe_day_sd <- rpe_sd %>%
+  group_by(Date, PlayerID) %>%
+  na.omit() %>%
+  summarise(sdsessionloadmean=mean(StandardizeSessionLoad))
+```
+
+```{r}
+## chronic ratio
+acr <- rpe %>%
+  filter(!is.na(AcuteChronicRatio)) %>%
+  select(Date, PlayerID, AcuteChronicRatio)
+```
+
+```{r}
+base <- sq_sd %>%
+  left_join(soreness_sd, by = c("Date", "PlayerID")) %>%
+  left_join(fatigue_sd, by = c("Date", "PlayerID")) %>%
+  left_join(desire_sd, by = c("Date", "PlayerID")) %>%
+  left_join(irr_sd, by = c("Date", "PlayerID"))
+base2 <- base %>%
+  full_join(acr,by = c("Date", "PlayerID"))
+## now base3 has sdsleepquality, sdsore, acr, sdsessionload
+base3 <- base2 %>%
+  full_join(rpe_day_sd,by = c("Date", "PlayerID"))
+```
+correlation test for sdsleepquality, sdsore, acr, sdsessionload to selfreported fatigue
+```{r}
+new <- data.frame(fatigue = base3$StandardizeFatigue, sleepquality = base3$StandardizeSQ, soreness = base3$StandardizeSoreness, acratio = base3$AcuteChronicRatio, sessionloadv = base3$sdsessionloadmean, desire = base3$StandardizeDesire, irr = base3$StandardizeIrritability)
+cor(new, use = "complete.obs")
+```
+```{r}
+cor(new$acratio, new$fatigue, use = "complete.obs")
+```
+```{r}
+
 ```
 
