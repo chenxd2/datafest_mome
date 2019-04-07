@@ -200,7 +200,32 @@ s <- base3 %>%
   mutate(scaled_desire = round(StandardizeDesire + 4)) %>%
   mutate(scaled_irr = round(StandardizeIrritability + 4)) %>%
   mutate(scaled_sl = round(sdsessionloadmean + 328)) %>%
-  select(scaled_fatigue, scaled_sq, scaled_sore, scaled_desire, scaled_irr, scaled_sl, AcuteChronicRatio)
-plot(s$scaled_fatigue, s$AcuteChronicRatio)
+  select(Date, PlayerID, scaled_fatigue, scaled_sq, scaled_sore, scaled_desire, scaled_irr, scaled_sl, AcuteChronicRatio)
+s2 <- s %>% 
+      group_by(PlayerID) %>% 
+      mutate_if(is.numeric, function(x) ifelse(is.na(x), mean(x, na.rm = TRUE), x))
+     
+plot(s2$scaled_fatigue, s$AcuteChronicRatio)
+```
+
+
+```{r}
+te <- lm(scaled_fatigue ~ scaled_sq + scaled_sl + scaled_desire + scaled_irr + scaled_sore + AcuteChronicRatio, data = s)
+  summary(te)
+set.seed(100)
+trainingRows <- sample(1:nrow(s), 0.7*nrow(s))
+training <- s[trainingRows, ]
+test <- s[-trainingRows, ]
+s$scaled_fatigue <- factor(s$scaled_fatigue, levels = sort(unique(s$scaled_fatigue)))
+s$scaled_sq <- factor(s$scaled_sq, levels = sort(unique(s$scaled_sq)))
+s$scaled_sl <- factor(s$scaled_sl, levels = sort(unique(s$scaled_sl)))
+s$scaled_desire <- factor(s$scaled_desire, levels = sort(unique(s$scaled_desire)))
+s$scaled_irr <- factor(s$scaled_irr, levels = sort(unique(s$scaled_irr)))
+s$scaled_sore <- factor(s$scaled_sore, levels = sort(unique(s$scaled_sore)))
+s$AcuteChronicRatio <- factor(s$AcuteChronicRatio, levels = sort(unique(s$AcuteChronicRatio)))
+
+library(nnet)
+multinomModel <- multinom(s ~ ., data=training) # multinom Model
+summary (multinomModel) # model summary
 ```
 
