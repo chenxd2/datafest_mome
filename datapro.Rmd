@@ -194,7 +194,7 @@ cor(new$acratio, new$fatigue, use = "complete.obs")
 ```{r}
 # manipulate scale
 s <- base3 %>%
-  mutate(scaled_fatigue = round(StandardizeFatigue + 4)) %>%
+  mutate(scaled_fatigue = round(0.96*(StandardizeFatigue + 4))) %>%
   mutate(scaled_sq = round(StandardizeSQ + 5)) %>%
   mutate(scaled_sore = round(StandardizeSoreness + 4)) %>%
   mutate(scaled_desire = round(StandardizeDesire + 4)) %>%
@@ -203,20 +203,20 @@ s <- base3 %>%
   select(Date, PlayerID, scaled_fatigue, scaled_sq, scaled_sore, scaled_desire, scaled_irr, scaled_sl, AcuteChronicRatio)
 s2 <- s %>% 
       group_by(PlayerID) %>% 
-      mutate_if(is.numeric, function(x) ifelse(is.na(x), mean(x, na.rm = TRUE), x))
+      mutate_if(is.numeric, function(x) ifelse(is.na(x), round(mean(x, na.rm = TRUE)), x)) 
+  
      
 plot(s2$scaled_fatigue, s$AcuteChronicRatio)
 ```
 
 
-```{r}
+
 ## multinomial test failed
-te <- lm(scaled_fatigue ~ scaled_sq + scaled_sl + scaled_desire + scaled_irr + scaled_sore + AcuteChronicRatio, data = s2)
+library(MASS)
+te <- rlm(scaled_fatigue ~ scaled_sq + scaled_sl + scaled_desire + scaled_irr + scaled_sore + AcuteChronicRatio, data = s2)
   summary(te)
-set.seed(100)
-trainingRows <- sample(1:nrow(s), 0.7*nrow(s))
-training <- s[trainingRows, ]
-test <- s[-trainingRows, ]
+  plot(te)
+
 s$scaled_fatigue <- factor(s$scaled_fatigue, levels = sort(unique(s$scaled_fatigue)))
 s$scaled_sq <- factor(s$scaled_sq, levels = sort(unique(s$scaled_sq)))
 s$scaled_sl <- factor(s$scaled_sl, levels = sort(unique(s$scaled_sl)))
@@ -228,5 +228,30 @@ s$AcuteChronicRatio <- factor(s$AcuteChronicRatio, levels = sort(unique(s$AcuteC
 library(nnet)
 multinomModel <- multinom(s ~ ., data=training) # multinom Model
 summary (multinomModel) # model summary
+
+
+```{r}
+library(MASS)
+set.seed(100)
+trainingRows <- sample(1:nrow(s2), 0.7*nrow(s2))
+training <- s2[trainingRows, ]
+test <- s2[-trainingRows, ]
+trained <- rlm(scaled_fatigue ~ scaled_sq + scaled_sl + scaled_desire + scaled_irr + scaled_sore + AcuteChronicRatio, data = training)
+summary(trained)
+predicted <- ceiling(predict(trained, test))
+table(test$scaled_fatigue, predicted)
+mean(as.character(round(test$scaled_fatigue)) != as.character(predicted))
+```
+
+```{r}
+final <- s2 %>%
+  mutate(fatigue_score = 0.3998 + 0.2428 * scaled_sq - 0.0004 * scaled_sl + 0.2573*scaled_desire +0.1451*scaled_irr + 0.1682 * scaled_sore + 0.0347*AcuteChronicRatio)
+debiasedfatigue_performance <- rlm(performance ~ fatigue_score, data = final)
+summary(debiasedfatigue_performance)
+plot(debiasedfatigue_performance)
+```
+
+```{r}
+plot(x = final$fatigue_score, y = predict(debiasedfatigue_performance, final)
 ```
 
